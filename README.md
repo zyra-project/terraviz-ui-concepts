@@ -1,49 +1,148 @@
-# SOS Catalog — 10 UI/UX concepts (working notes)
+# SOS Catalog — 10 UI/UX Concepts
 
-Goal: redesign https://sos.noaa.gov/catalog/datasets/ as 10 standalone HTML concepts (search / filter / categorise / sort / view, 2D + 3D globe, themes + layouts).
-Real data: 528 datasets from `catalog.json` + descriptions crawled from dataset pages (see src/raw). Thumbnails hot-linked from sos.noaa.gov (`thumbnail_small.jpg` exists for all).
+Ten standalone redesigns of the [NOAA Science On a Sphere dataset catalog](https://sos.noaa.gov/catalog/datasets/). Each concept explores a different way to search, filter, categorise, sort and view the catalog, with 2D and 3D globes, multiple themes and multiple layouts.
 
-## Build / preview
-- `node src/build.js [prefix...]` inlines `src/shared/*` + generated data into `src/concepts/*.html` → `concepts/*.html` (files starting `_` → `dev/`).
-- Preview server: `preview_start name=concepts` (node static server, port 5183; python http.server CANNOT see this path — Store-Python AppData virtualization).
-- The Browser pane is hidden → requestAnimationFrame does not fire and the animation clock is frozen. Add `?rafshim` to any page URL: timer-driven rAF **and** transitions/animations/smooth-scroll switched off (otherwise `visibility`/`opacity` transitions never finish and panels look blank). Screenshots need a short `wait` first.
-- `dev/engine.html?rafshim&sheet=sst,clouds,body:moon&cols=3&mode=3d|2d&proj=natural&style=dots|paper|flat|duo&wrap=0` = contact-sheet of mini globes.
-- `dev/frame.html?c=02-atlas&w=1280&h=800&v=1&q=layout=split&theme=paper#slug` shows a concept in an iframe of the requested CSS size scaled to the window (true desktop layouts in a small pane). Change `v` when re-checking a rebuilt file (the page itself gets cached).
+**Live preview:** https://sos-catalog-concepts.pages.dev
 
-## Shared code (src/shared) — order matters
-00-core (utils, geo data, QA hook, `?rafshim`) · 10-store (SOS.store: hydrate, run(state) search/facets/sort, playlist) · 20-layers (SOS.layers: LAYERS ramps/legends, BODIES, overlays, Particles, resolve(d), timeInfo) · 30-shaders (GLSL) · 31-globe (SOS.Globe) · 40-ui (SOS.ui: icon(), thumb(), toast, persist, themeSwitcher, segmented, fitPlaceholders, bindScrollFade) · 50-app (SOS.createApp, SOS.describe, SOS.bindGlobe)
-- `fitPlaceholders` (auto-runs): shortens an `<input placeholder>` to whole words + "…" when the field is too narrow (original kept in `data-ph`).
-- `bindScrollFade` (auto-runs): `[data-fade]` horizontal strips get an edge fade on whichever side still has content.
+![Orbit](assets/shots/01-orbit.jpg)
 
-### SOS.Globe API
-`new SOS.Globe(el,{mode:'3d'|'2d', projection:'equirect'|'natural'|'mercator', wrap, lon, lat, zoom, autoRotate, onView, onHover, onClick, onTime, onReady})`
-`themeFromCSS(el)` reads `--g-style(photo|flat|duo|dots) --g-ocean --g-ocean2 --g-land --g-land2 --g-coast --g-coast-a --g-grid --g-grid-a --g-grid-step --g-atmo --g-atmo-a --g-stars --g-light(head|sun|none) --g-exposure --g-sat --g-gamma --g-night --g-lights --g-text --g-halo --g-accent`
-`setMode, setProjection, setDataset(d,{fly,dur}), setTime(t), play(bool), setLoop(s), setLayerOpacity, setInsets({l,r,t,b}), flyTo(lon,lat,zoom), zoomBy(f), resetView(), project(), unproject()`
-Layer kinds → `SOS.layers.LAYERS` (sst,temp,clouds,precip,aerosol,co2,ice,bathy,veg,chloro,pop,tsunami,ozone,aurora,magnetic,insol,lights,topo,wind,currents,fire,acid,quakes,storms,routes,energy,earth) + bodies (`body:moon` …) + `sky:cmb|milky`.
-Layers are ILLUSTRATIVE procedural visuals (not real data) — say so in the UI footer/about.
+## What's inside
 
-## Concepts (src/concepts/NN-name.html)
-01 Orbit (immersive globe + glass panels, dark) · 02 Atlas (editorial split, paper light, serif) · 03 Mission Control (dense 3-col console, mono) · 04 Gallery (streaming shelves + bento, light vibrant) · 05 Constellation (force graph) · 06 Chronos (timeline/gantt + map) · 07 Pocket (mobile-first bottom sheet) · 08 Portal (classic faceted grid, NOAA blue) · 09 Index (swiss typographic list + hover preview) · 10 Studio (playlist builder/presenter, multi-globe)
-Each: 3 themes (data-theme) + 3 layouts (data-layout), responsive to 390px, keyboard accessible. `?theme=` / `?layout=` / `#slug` deep links work everywhere (Constellation also `?group=network|category|theme|year|kind|platform`).
+- **Real catalog data:** 528 datasets from `catalog.json`, with descriptions crawled from the dataset pages (see [src/raw](src/raw)). Thumbnails are hot-linked from sos.noaa.gov.
+- **Self-contained concepts:** every file in [concepts](concepts) is a single HTML page with the engine, data and styles inlined. No runtime dependencies.
+- **Shared globe engine:** a WebGL globe with 3D, 2D and a morph between them, several map projections, celestial bodies and procedural data layers.
+- **Themes and layouts:** each concept ships with 3 themes and 3 layouts, is responsive down to 390px, and is keyboard accessible.
 
-## Testing tips (Browser pane)
-- Screenshots lag one frame behind state changes → take a second screenshot (or `wait`). They also time out now and then ("page did not finish rendering") — just retry. If a screenshot looks zoomed/tiny, re-issue `resize_window` with the same size, or use `dev/frame.html`.
-- A hash-only navigation (`…#slug` on the same path) does not reload the page; visit another URL first.
-- Selectors: avoid generic class names shared between components (a legend `.bar` once collided with Gantt `.bar`). `ui.segmented()` needs `[data-value]`.
-- `content-visibility:auto` on rows caused paint artefacts outside the scroll container — don't use it.
-- Specificity trap: `html[data-layout=x] .app{grid-template-columns:…}` beats a plain `.app{…}` inside a media query — repeat the layout selector in the responsive rule.
+> The globe layers are illustrative procedural visuals, not real data.
 
-## QA
-- `dev/qa.html?mode=all&auto=1` loads every concept × theme/layout (desktop 1360×800) and every layout at 390×780 in an iframe and reports uncaught errors / console.error (collected by `window.__sosErrors`, installed in `00-core.js`), horizontal overflow and missing canvases. Results: `window.__qa`. Add `&hash=hurricane-season-2017` to run the same matrix with a dataset selected.
-- The matrix only catches errors/overflow — also eyeball every layout at phone width and at 1280 (see Testing tips). A visual pass found and fixed: clipped/overlapping labels in Constellation's Year/Layer/Platform groupings on phones, Mission Control's Table layout at phone width, crowded time labels in its narrow inspector, Portal's split preview hiding at exactly 1280px, Index's over-tall wall preview card, Gallery's stray category dot, truncated search placeholders, Studio ignoring `#slug`.
-- `dev/contrast.html?auto=1[&w=390&h=800]` loads every concept × theme, plain and with a dataset open, and measures WCAG contrast of all on-screen text and placeholders (composited over the real background stack; text over images/gradients/canvas is skipped and counted as "unknown"). Results: `window.__contrast`. Current state: 0 failures at 1280×800 and at 390×800 (60 states each). Palette rule of thumb: tertiary text (`--faint`) must be ≥ 4.5:1 on every surface of its theme; use `color-mix(in srgb, var(--c) 70%, var(--ink))` for category-coloured text on light themes; don't dim text with `opacity` (it silently drops below 4.5:1).
-- `dev/a11y.html?auto=1` loads every concept (plain + dataset open) and checks structure: unnamed buttons/links, unlabeled inputs, images without alt, duplicate ids, positive tabindex, dangling aria-* references, lang/title/viewport/h1. Current state: clean. (A hidden `<h1 class="sr-only">` was added where a concept had no visible one.)
-- `index.html` (root) is the gallery; hero screenshots live in `assets/shots/NN-name.jpg` (800×500, captured from the concepts themselves).
+## The concepts
 
-## Status
-- [x] data pipeline, store, layers, engine (3D/2D/morph, bodies), app glue
-- [x] concepts 01–10 built (01 Orbit, 02 Atlas, 03 Mission Control, 04 Gallery, 05 Constellation, 06 Chronos, 07 Pocket, 08 Portal, 09 Index, 10 Studio)
-- [x] index.html gallery + screenshots
-- [x] QA matrix run (90 loads ×2 — plain and with a dataset selected — zero script errors, no horizontal overflow)
-- [x] visual pass: every layout at 375px and 1280px, selected-dataset state at 375px
-- [x] contrast audit: 0 failures in 120 states (see QA)
+| # | Concept | Idea |
+|---|---------|------|
+| 01 | Orbit | Immersive globe with glass panels, dark |
+| 02 | Atlas | Editorial split view, paper-light, serif |
+| 03 | Mission Control | Dense three-column console, monospace |
+| 04 | Gallery | Streaming-style shelves and bento grid, light and vibrant |
+| 05 | Constellation | Force-directed graph of datasets |
+| 06 | Chronos | Timeline / Gantt chart alongside a map |
+| 07 | Pocket | Mobile-first bottom sheet |
+| 08 | Portal | Classic faceted grid in NOAA blue |
+| 09 | Index | Swiss-style typographic list with hover preview |
+| 10 | Studio | Playlist builder and presenter with multiple globes |
+
+### Deep links
+
+These work in every concept:
+
+- `?theme=<name>` selects a theme
+- `?layout=<name>` selects a layout
+- `#<dataset-slug>` opens a dataset (e.g. `#hurricane-season-2017`)
+- Constellation also accepts `?group=network|category|theme|year|kind|platform`
+
+## Getting started
+
+Requires Node.js. There are no dependencies to install.
+
+```bash
+# Build everything
+node src/build.js
+
+# Build only specific concepts by file-name prefix
+node src/build.js 03 05
+
+# Serve the repo locally (default port 5183)
+node src/tools/serve.js
+```
+
+Then open `index.html` (the gallery) or any file in `concepts/`.
+
+The build inlines `src/shared/*` and the generated data into each template in `src/concepts/` and writes the result to `concepts/`. Templates starting with `_` are dev pages and are written to `dev/`.
+
+## Project layout
+
+```
+index.html          Gallery of all concepts
+concepts/           Built, standalone concept pages
+assets/shots/       Hero screenshots (800×500)
+dev/                Dev and QA pages (engine sheet, frame, qa, contrast, a11y)
+src/
+  build.js          Template inliner
+  concepts/         Concept templates
+  raw/              Source catalog, descriptions, thumbnails
+  generated/        Output of the data pipeline
+  shared/           Engine, store, layers, UI helpers, base CSS
+  tools/            Data preparation and local server
+```
+
+## Shared code
+
+Files in `src/shared` are concatenated in this order, so order matters:
+
+| File | Provides |
+|------|----------|
+| `00-core.js` | Utilities, geo data, QA hook, `?rafshim` |
+| `10-store.js` | `SOS.store`: hydration, search / facets / sort, playlist |
+| `20-layers.js` | `SOS.layers`: layer ramps and legends, bodies, overlays, particles |
+| `30-shaders.js` | GLSL shaders |
+| `31-globe.js` | `SOS.Globe` |
+| `40-ui.js` | `SOS.ui`: icons, thumbs, toasts, persistence, theme switcher, segmented control |
+| `50-app.js` | `SOS.createApp`, `SOS.describe`, `SOS.bindGlobe` |
+
+Two helpers run automatically:
+
+- `fitPlaceholders` shortens an `<input placeholder>` to whole words plus "…" when the field is too narrow. The original text is kept in `data-ph`.
+- `bindScrollFade` adds an edge fade to `[data-fade]` horizontal strips on whichever side still has content.
+
+### Globe API
+
+```js
+new SOS.Globe(el, {
+  mode: '3d',             // '3d' | '2d'
+  projection: 'equirect', // 'equirect' | 'natural' | 'mercator'
+  wrap, lon, lat, zoom, autoRotate,
+  onView, onHover, onClick, onTime, onReady
+});
+```
+
+Methods: `setMode`, `setProjection`, `setDataset(d, {fly, dur})`, `setTime(t)`, `play(bool)`, `setLoop(s)`, `setLayerOpacity`, `setInsets({l,r,t,b})`, `flyTo(lon, lat, zoom)`, `zoomBy(f)`, `resetView()`, `project()`, `unproject()`.
+
+Theming: `themeFromCSS(el)` reads the `--g-*` custom properties: `--g-style` (`photo|flat|duo|dots`), `--g-ocean`, `--g-ocean2`, `--g-land`, `--g-land2`, `--g-coast`, `--g-coast-a`, `--g-grid`, `--g-grid-a`, `--g-grid-step`, `--g-atmo`, `--g-atmo-a`, `--g-stars`, `--g-light` (`head|sun|none`), `--g-exposure`, `--g-sat`, `--g-gamma`, `--g-night`, `--g-lights`, `--g-text`, `--g-halo` and `--g-accent`.
+
+Layer kinds live in `SOS.layers.LAYERS`: sst, temp, clouds, precip, aerosol, co2, ice, bathy, veg, chloro, pop, tsunami, ozone, aurora, magnetic, insol, lights, topo, wind, currents, fire, acid, quakes, storms, routes, energy, earth. Also supported are bodies (`body:moon`, …) and skies (`sky:cmb`, `sky:milky`). Because the layers are illustrative, say so in the UI footer or about text.
+
+## Development and QA
+
+### Dev pages
+
+- `dev/engine.html?rafshim&sheet=sst,clouds,body:moon&cols=3&mode=3d|2d&proj=natural&style=dots|paper|flat|duo&wrap=0` renders a contact sheet of mini globes.
+- `dev/frame.html?c=02-atlas&w=1280&h=800&v=1&q=layout=split&theme=paper#slug` shows a concept in an iframe of a given CSS size, scaled to fit the window. Change `v` after a rebuild to bypass caching.
+
+### Automated checks
+
+| Page | Checks | Status |
+|------|--------|--------|
+| `dev/qa.html?mode=all&auto=1` | Loads every concept × theme/layout (1360×800) and every layout at 390×780. Reports uncaught errors, `console.error`, horizontal overflow and missing canvases. Add `&hash=<slug>` to run with a dataset selected. Results in `window.__qa`. | 0 errors across 90 loads, plain and with a dataset |
+| `dev/contrast.html?auto=1[&w=390&h=800]` | Measures WCAG contrast of on-screen text and placeholders in every concept × theme. Results in `window.__contrast`. | 0 failures in 120 states |
+| `dev/a11y.html?auto=1` | Checks unnamed buttons/links, unlabeled inputs, missing alt text, duplicate ids, positive tabindex, dangling `aria-*` references, and lang/title/viewport/h1. | Clean |
+
+The QA matrix only catches errors and overflow, so also check each layout by eye at phone width and at 1280px.
+
+Palette rule of thumb: tertiary text (`--faint`) must reach 4.5:1 on every surface of its theme. For category-coloured text on light themes use `color-mix(in srgb, var(--c) 70%, var(--ink))`, and don't dim text with `opacity`.
+
+### Tips for the hidden browser pane
+
+- Add `?rafshim` to a page URL when `requestAnimationFrame` doesn't fire. It switches to a timer-driven rAF and disables transitions, animations and smooth scroll. Take screenshots after a short wait.
+- Screenshots lag one frame behind state changes, so take a second one. If one looks zoomed or tiny, resize the window again or use `dev/frame.html`.
+- A hash-only navigation does not reload the page. Visit another URL first.
+- Use the bundled Node server. Python's `http.server` can't see this path because of Store-Python AppData virtualization.
+
+### Gotchas
+
+- Avoid generic class names shared between components. A legend `.bar` once collided with the Gantt `.bar`.
+- `ui.segmented()` needs `[data-value]` on its items.
+- Don't use `content-visibility: auto` on rows. It caused paint artefacts outside the scroll container.
+- `html[data-layout=x] .app { grid-template-columns: … }` beats a plain `.app { … }` inside a media query. Repeat the layout selector in the responsive rule.
+
+## License
+
+See [LICENSE](LICENSE).
