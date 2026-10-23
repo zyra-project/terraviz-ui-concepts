@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Contrast audit</title>
+<style>
+  body{font:13px/1.4 ui-monospace,Consolas,monospace;margin:16px;background:#111;color:#ddd}
+  table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #333;padding:3px 8px;text-align:left;vertical-align:top}
+  .ok{color:#7dffa6}.bad{color:#ff7b7b}.warn{color:#ffd27a}
+  #stage{position:fixed;left:-9999px;top:0}
+  button{font:inherit;padding:6px 14px}
+</style></head><body>
+<h3>Text-contrast audit <button id="go">Run</button> <span id="prog"></span></h3>
+<p>WCAG 2.x: 4.5:1 for normal text, 3:1 for large (≥24px, or ≥18.66px bold). Backgrounds with images/gradients are skipped (reported as “unknown”). Results: <code>window.__contrast</code>.</p>
+<div id="stage"></div>
+<table><thead><tr><th>#</th><th>page</th><th>state</th><th>texts</th><th>fail</th><th>worst</th></tr></thead><tbody id="out"></tbody></table>
+<script>
+const CONCEPTS = {
+  '01-orbit': ['deep', 'aurora', 'frost'], '02-atlas': ['paper', 'ink', 'ocean'], '03-mission-control': ['phosphor', 'amber', 'blueprint'],
+  '04-gallery': ['daylight', 'midnight', 'candy'], '05-constellation': ['indigo', 'nebula', 'chalk'], '06-chronos': ['sand', 'graphite', 'sea'],
+  '07-pocket': ['daylight', 'midnight', 'coral'], '08-portal': ['noaa', 'deep', 'contrast'], '09-index': ['paper', 'ink', 'klein'], '10-studio': ['cinema', 'light', 'neon'],
+};
+const params = new URLSearchParams(location.search);
+const only = params.get('only') ? params.get('only').split(',') : null;
+const W = +params.get('w') || 1280, H = +params.get('h') || 800;
+const states = (params.get('states') || 'plain,open').split(',');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true });
+
+function parseColor(s) {
+  if (!s) return null; s = s.trim();
+  let m = s.match(/^rgba?\(([^)]+)\)$/);
+  if (m) { const p = m[1].split(/[\s,\/]+/).filter(Boolean).map(parseFloat); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; }
+  m = s.match(/^color\(srgb\s+([^)]+)\)$/);
+  if (m) { const p = m[1].split(/[\s\/]+/).filter(Boolean).map(parseFloat); return { r: p[0] * 255, g: p[1] * 255, b: p[2] * 255, a: p.length > 3 ? p[3] : 1 }; }
+  // anything else (oklch, lab, color-mix results …): let the canvas normalise it
+  cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = s; cx.fillRect(0, 0, 1, 1);
+  const d = cx.getImageData(0, 0, 1, 1).data; return { r: d[0], g: d[1], b: d[2], a: d[3] / 255 };
+}
+const over = (fg, bg) => { const a = fg.a; return { r: fg.r * a + bg.r * (1 - a), g: fg.g * a + bg.g * (1 - a), b: fg.b * a + bg.b * (1 - a), a: 1 }; };
+const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+const ratio = (a, b) => { const l1 = lum(a), l2 = lum(b); return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05); };
+
+function scan(win) {
+  const doc = win.document, out = [];
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  const seen = new Set(); let total = 0, unknown = 0;
+  const root = { r: 255, g: 255, b: 255, a: 1 };
+  while (walker.nextNode()) {
+    const t = walker.currentNode; const txt = t.nodeValue.replace(/\s+/g, ' ').trim(); if (txt.length < 2) continue;
+    const el = t.parentElement; if (!el || seen.has(el)) continue;
+    if (el.closest('script,style,noscript,canvas,svg,option,[aria-hidden="true"],.sr-only')) continue;
+    const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2) continue;
+    if (r.bottom < 0 || r.top > win.innerHeight || r.right < 0 || r.left > win.innerWidth) continue;   // only what is on screen
+    // visibility + effective opacity, background stack
+    let op = 1, hidden = false, node = el; const bgs = []; let imgBg = false;
+    for (; node && node.nodeType === 1; node = node.parentElement) {
+      const cs = win.getComputedStyle(node);
+      if (cs.display === 'none' || cs.visibility === 'hidden') { hidden = true; break; }
+      op *= parseFloat(cs.opacity); if (op < 0.05) { hidden = true; break; }
+      if (node !== el || true) {
+        const bi = cs.backgroundImage; const c = parseColor(cs.backgroundColor);
+        if (bi && bi !== 'none') { imgBg = true; if (!(c && c.a >= 1)) { break; } }
+        if (c && c.a > 0) { bgs.push(c); if (c.a >= 1) break; }
+      }
+      if (cs.position === 'fixed' && false) break;
+    }
+    if (hidden) continue;
+    const cs = win.getComputedStyle(el);
+    // clipped away by an overflow ancestor? (rough: if the element centre is not hit-testable within the viewport, skip)
+    const px = Math.min(Math.max(r.left + r.width / 2, 0), win.innerWidth - 1), py = Math.min(Math.max(r.top + r.height / 2, 0), win.innerHeight - 1);
+    const hit = doc.elementFromPoint(px, py); if (!hit || !(el.contains(hit) || hit.contains(el))) continue;
+    seen.add(el); total++;
+    if (imgBg) { unknown++; continue; }
+    let bg = bgs.length && bgs[bgs.length - 1].a >= 1 ? bgs[bgs.length - 1] : root;
+    for (let i = bgs.length - (bgs[bgs.length - 1] && bgs[bgs.length - 1].a >= 1 ? 2 : 1); i >= 0; i--) bg = over(bgs[i], bg);
+    let fg = parseColor(cs.color); if (!fg) continue; fg = { ...fg, a: fg.a * op }; const fgc = over(fg, bg);
+    const size = parseFloat(cs.fontSize), bold = parseInt(cs.fontWeight, 10) >= 700, large = size >= 24 || (size >= 18.66 && bold);
+    const need = large ? 3 : 4.5, rt = ratio(fgc, bg);
+    if (rt < need - 0.01) out.push({ sel: el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : ''), text: txt.slice(0, 40), ratio: +rt.toFixed(2), need, size: +size.toFixed(1), fg: `rgb(${fgc.r | 0},${fgc.g | 0},${fgc.b | 0})`, bg: `rgb(${bg.r | 0},${bg.g | 0},${bg.b | 0})` });
+  }
+  // placeholders
+  doc.querySelectorAll('input[placeholder],textarea[placeholder]').forEach((el) => {
+    const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return;
+    for (let n = el, o = 1; n && n.nodeType === 1; n = n.parentElement) { const c = win.getComputedStyle(n); o *= parseFloat(c.opacity); if (c.display === 'none' || c.visibility === 'hidden' || o < 0.05) return; }   // hidden (e.g. a closed palette)
+    const pcs = win.getComputedStyle(el, '::placeholder'); let fg = parseColor(pcs.color); if (!fg) return;
+    let bg = { r: 255, g: 255, b: 255, a: 1 }, node = el, bgs = [], img = false;
+    for (; node && node.nodeType === 1; node = node.parentElement) { const cs = win.getComputedStyle(node); if (cs.backgroundImage !== 'none') img = true; const c = parseColor(cs.backgroundColor); if (c && c.a > 0) { bgs.push(c); if (c.a >= 1) break; } }
+    if (img) return; if (bgs.length) { bg = bgs[bgs.length - 1].a >= 1 ? bgs[bgs.length - 1] : bg; for (let i = bgs.length - 2; i >= 0; i--) bg = over(bgs[i], bg); }
+    fg = { ...fg, a: fg.a * parseFloat(pcs.opacity || 1) }; const fgc = over(fg, bg), rt = ratio(fgc, bg);
+    if (rt < 4.5) out.push({ sel: 'placeholder ' + (el.id || el.className || ''), text: el.placeholder.slice(0, 30), ratio: +rt.toFixed(2), need: 4.5, size: parseFloat(win.getComputedStyle(el).fontSize), fg: `rgb(${fgc.r | 0},${fgc.g | 0},${fgc.b | 0})`, bg: `rgb(${bg.r | 0},${bg.g | 0},${bg.b | 0})` });
+  });
+  return { total, unknown, fails: out };
+}
+
+const results = (window.__contrast = []);
+const jobs = [];
+for (const [name, themes] of Object.entries(CONCEPTS)) {
+  if (only && !only.some((o) => name.startsWith(o))) continue;
+  for (const th of themes) for (const st of states) jobs.push({ name, th, st });
+}
+async function run(job, i) {
+  const f = document.createElement('iframe'); f.style.cssText = `width:${W}px;height:${H}px;border:0`; document.getElementById('stage').appendChild(f);
+  f.src = `../concepts/${job.name}.html?rafshim&_=${Date.now()}&theme=${job.th}` + (job.st === 'open' ? '#hurricane-season-2017' : '');
+  const t0 = performance.now(); let loaded = false; f.onload = () => { loaded = true; };
+  while (!loaded && performance.now() - t0 < 12000) await sleep(100);
+  await sleep(2200);
+  let res;
+  try { res = scan(f.contentWindow); } catch (e) { res = { total: 0, unknown: 0, fails: [{ sel: 'ERR', text: e.message, ratio: 0, need: 0 }] }; }
+  const worst = res.fails.slice().sort((a, b) => a.ratio - b.ratio)[0];
+  results.push({ page: job.name, theme: job.th, state: job.st, total: res.total, unknown: res.unknown, fails: res.fails });
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${i + 1}</td><td>${job.name} · ${job.th}</td><td>${job.st}</td><td>${res.total}</td><td class="${res.fails.length ? 'bad' : 'ok'}">${res.fails.length}</td><td>${worst ? `${worst.ratio}:1 ${worst.sel} “${worst.text}”` : ''}</td>`;
+  document.getElementById('out').appendChild(tr);
+  f.src = 'about:blank'; await sleep(100); f.remove();
+}
+document.getElementById('go').onclick = async () => { document.getElementById('go').disabled = true; for (let i = 0; i < jobs.length; i++) { document.getElementById('prog').textContent = `${i + 1}/${jobs.length}`; await run(jobs[i], i); } document.getElementById('prog').textContent = `done (${jobs.length})`; window.__contrastDone = true; };
+if (params.get('auto')) document.getElementById('go').click();
+</script></body></html>

@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SOS Catalog — ten redesign concepts</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='g' cx='.35' cy='.3'%3E%3Cstop offset='0' stop-color='%23a6dcff'/%3E%3Cstop offset='1' stop-color='%231847b8'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='14' fill='url(%23g)'/%3E%3Cellipse cx='16' cy='16' rx='5.5' ry='14' fill='none' stroke='%23fff' stroke-opacity='.55' stroke-width='1.4'/%3E%3Cpath d='M3 12h26M3 20h26' stroke='%23fff' stroke-opacity='.45' stroke-width='1.4' fill='none'/%3E%3C/svg%3E">
+<meta name="description" content="Ten fully working redesign concepts for the NOAA Science On a Sphere dataset catalog: search, filter, categorise, sort and view 528 datasets on a live 2D/3D globe — each with three themes and three layouts.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --font:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --bg:#f5f6fb;--surface:#fff;--surface2:#eef0f8;--ink:#0c1122;--muted:#566079;--faint:#606b88;--line:#e1e5f0;--line2:#cdd3e4;
+  --accent:#4a45e8;--accent2:#0aa6c9;--accent-ink:#fff;--shadow:0 1px 2px rgba(20,30,70,.06),0 18px 40px -22px rgba(20,30,80,.35);--shadow-hi:0 2px 4px rgba(20,30,70,.08),0 34px 70px -28px rgba(20,30,90,.5);--focus:#4a45e8;--hero-a:rgba(74,69,232,.14);--hero-b:rgba(10,166,201,.14);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#080b14;--surface:#10152a;--surface2:#171d36;--ink:#eef1fc;--muted:#a2abc6;--faint:#7d87a3;--line:#1f2745;--line2:#2d3760;--accent:#8e8cff;--accent2:#35d4ee;--accent-ink:#0a0d24;--shadow:0 1px 2px rgba(0,0,0,.5),0 22px 48px -24px rgba(0,0,0,.8);--shadow-hi:0 2px 4px rgba(0,0,0,.6),0 40px 80px -30px rgba(0,0,0,.9);--focus:#a9a7ff;--hero-a:rgba(142,140,255,.16);--hero-b:rgba(53,212,238,.12)}}
+:root[data-theme="dark"]{
+  --bg:#080b14;--surface:#10152a;--surface2:#171d36;--ink:#eef1fc;--muted:#a2abc6;--faint:#7d87a3;--line:#1f2745;--line2:#2d3760;--accent:#8e8cff;--accent2:#35d4ee;--accent-ink:#0a0d24;--shadow:0 1px 2px rgba(0,0,0,.5),0 22px 48px -24px rgba(0,0,0,.8);--shadow-hi:0 2px 4px rgba(0,0,0,.6),0 40px 80px -30px rgba(0,0,0,.9);--focus:#a9a7ff;--hero-a:rgba(142,140,255,.16);--hero-b:rgba(53,212,238,.12);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.6 var(--font);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button{font-family:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:8px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.skip{position:absolute;left:12px;top:-60px;background:var(--accent);color:var(--accent-ink);padding:10px 16px;border-radius:10px;font-weight:700;z-index:100;text-decoration:none}
+.skip:focus{top:12px}
+
+/* header */
+.top{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:20px;height:64px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;font:800 17px/1 var(--font);letter-spacing:-.02em}
+.brand svg{width:30px;height:30px;color:var(--accent)}
+.brand small{font:500 12px var(--mono);color:var(--muted);letter-spacing:0;margin-left:4px;padding-left:12px;border-left:1px solid var(--line2)}
+.nav{display:flex;gap:4px;margin-left:auto}
+.nav a{padding:8px 13px;border-radius:9px;text-decoration:none;font:600 14px/1 var(--font);color:var(--muted)}
+.nav a:hover{background:var(--surface2);color:var(--ink)}
+.tbtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line2);background:var(--surface);display:grid;place-items:center}
+.tbtn:hover{border-color:var(--ink)}
+
+/* hero */
+.hero{position:relative;overflow:hidden;padding:clamp(44px,8vw,96px) 0 clamp(36px,6vw,64px)}
+.hero::before{content:"";position:absolute;inset:-20% -10% auto -10%;height:120%;background:radial-gradient(700px 420px at 12% 10%,var(--hero-a),transparent 70%),radial-gradient(640px 420px at 92% 30%,var(--hero-b),transparent 70%);pointer-events:none}
+.hero .wrap{position:relative;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:clamp(28px,5vw,72px);align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font:600 12.5px/1 var(--mono);letter-spacing:.02em;color:var(--accent);padding:8px 13px;border-radius:999px;background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 26%,transparent)}
+.eyebrow i{width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent2) 25%,transparent)}
+h1{margin:20px 0 18px;font:800 clamp(38px,6vw,76px)/1.02 var(--font);letter-spacing:-.045em}
+h1 em{font-style:normal;background:linear-gradient(100deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{margin:0 0 28px;font-size:clamp(16px,1.5vw,19px);color:var(--muted);max-width:56ch}
+.ctas{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:10px;height:50px;padding:0 24px;border-radius:13px;border:1px solid var(--line2);background:var(--surface);font:700 15px/1 var(--font);text-decoration:none;transition:transform .2s,box-shadow .2s,border-color .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--ink)}
+.btn.pri{background:linear-gradient(100deg,var(--accent),color-mix(in srgb,var(--accent) 60%,var(--accent2)));border-color:transparent;color:var(--accent-ink)}
+.collage{position:relative;aspect-ratio:1.18/1}
+.collage a{position:absolute;display:block;border-radius:16px;overflow:hidden;box-shadow:var(--shadow-hi);border:1px solid var(--line);background:var(--surface);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.collage img{display:block;width:100%;height:100%;object-fit:cover}
+.collage a:nth-child(1){left:0;top:12%;width:66%;aspect-ratio:16/10;transform:rotate(-4deg);z-index:2}
+.collage a:nth-child(2){right:0;top:0;width:58%;aspect-ratio:16/10;transform:rotate(3.5deg);z-index:1}
+.collage a:nth-child(3){right:6%;bottom:0;width:62%;aspect-ratio:16/10;transform:rotate(-1.5deg);z-index:3}
+.collage a:hover{transform:rotate(0) scale(1.03);z-index:5}
+
+/* facts */
+.facts{padding:6px 0 0}
+.facts ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.facts li{padding:18px 18px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+.facts b{display:block;font:800 clamp(26px,3vw,36px)/1 var(--font);letter-spacing:-.04em}
+.facts span{display:block;margin-top:6px;color:var(--muted);font:600 13px/1.3 var(--font)}
+
+/* sections */
+section{padding:clamp(44px,7vw,84px) 0 0}
+.sh{display:flex;align-items:end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:28px}
+h2{margin:0;font:800 clamp(28px,3.6vw,44px)/1.08 var(--font);letter-spacing:-.04em}
+.sh p{margin:10px 0 0;color:var(--muted);max-width:60ch}
+.tip{font:500 12.5px var(--mono);color:var(--muted);padding:9px 13px;border-radius:10px;border:1px dashed var(--line2);white-space:nowrap}
+kbd{font:500 11.5px var(--mono);border:1px solid var(--line2);border-bottom-width:2px;border-radius:6px;padding:1px 7px;background:var(--surface)}
+
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(18px,2.4vw,32px)}
+.card{position:relative;display:flex;flex-direction:column;border-radius:22px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-color .3s}
+.card:hover{transform:translateY(-5px);box-shadow:var(--shadow-hi);border-color:var(--line2)}
+.shot{position:relative;display:block;aspect-ratio:16/10;overflow:hidden;background:#0a0d18}
+.shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:top center;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.card:hover .shot img{transform:scale(1.035)}
+.shot::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(5,8,20,.55),transparent 45%);opacity:.85;transition:opacity .3s}
+.num{position:absolute;left:16px;top:14px;z-index:2;min-width:44px;height:44px;padding:0 12px;border-radius:12px;display:grid;place-items:center;background:rgba(10,13,28,.72);color:#fff;font:600 15px var(--mono);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.18)}
+.open{position:absolute;right:16px;bottom:14px;z-index:2;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:11px;background:#fff;color:#0c1122;font:700 14px var(--font);text-decoration:none;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s}
+.card:hover .open,.card:focus-within .open{opacity:1;transform:none}
+.cb{padding:20px 24px 24px;display:flex;flex-direction:column;gap:14px;flex:1}
+.cb h3{margin:0;display:flex;align-items:baseline;gap:12px;font:800 26px/1.1 var(--font);letter-spacing:-.035em}
+.cb h3 a{text-decoration:none}
+.cb h3 a::after{content:"";position:absolute;inset:0;z-index:1}
+.cb h3 small{font:500 12px var(--mono);letter-spacing:0;color:var(--accent);padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.cb p{margin:0;color:var(--muted);font-size:15.5px;line-height:1.6}
+.rows{display:grid;gap:10px;margin-top:auto;padding-top:6px;position:relative;z-index:2}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.row .k{width:62px;flex:none;font:500 11.5px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.04em}
+.chip{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px 0 9px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);font:600 13px/1 var(--font);text-decoration:none;color:var(--ink);transition:border-color .15s,background .15s}
+.chip:hover{border-color:var(--ink);background:var(--surface2)}
+.chip.l{padding:0 13px}
+.sw{width:16px;height:16px;border-radius:50%;flex:none;box-shadow:0 0 0 1px rgba(128,128,150,.35) inset}
+
+/* table */
+.tw{overflow-x:auto;border-radius:20px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th,td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--line);font-size:14.5px}
+thead th{font:600 12.5px var(--mono);letter-spacing:0;color:var(--muted);text-transform:uppercase;background:var(--surface2);white-space:nowrap}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+tbody th{font:700 15px var(--font);white-space:nowrap}
+tbody th a{text-decoration:none}tbody th a:hover{color:var(--accent);text-decoration:underline}
+tbody th span{font:500 12px var(--mono);color:var(--faint);margin-right:10px}
+tbody tr:hover{background:var(--surface2)}
+.dots{display:inline-flex;gap:4px;vertical-align:middle}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line2)}
+.dots i.on{background:var(--accent)}
+.legend{margin:14px 4px 0;color:var(--faint);font-size:13px}
+
+/* notes */
+.notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.note{padding:24px;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+.note h3{margin:0 0 8px;font:800 19px/1.2 var(--font);letter-spacing:-.025em}
+.note p{margin:0;color:var(--muted);font-size:15px}
+.note ul{margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:14.5px}
+footer{margin-top:clamp(50px,8vw,100px);border-top:1px solid var(--line);padding:30px 0 50px;color:var(--faint);font-size:13.5px}
+
+@media (max-width:1000px){
+  .hero .wrap{grid-template-columns:1fr}
+  .collage{max-width:560px}
+  .facts ul{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid{grid-template-columns:1fr}
+  .notes{grid-template-columns:1fr}
+  .nav a:not(.keep){display:none}
+}
+@media (max-width:560px){
+  .brand small{display:none}
+  .facts ul{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cb{padding:18px 18px 20px}
+  .cb h3{font-size:23px}
+  .row .k{width:100%}
+  .tip{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#concepts">Skip to the concepts</a>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#" aria-label="SOS Catalog concepts — top"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="20" cy="20" r="16"/><ellipse cx="20" cy="20" rx="6.5" ry="16"/><path d="M5 14.5h30M5 25.5h30"/></svg>SOS Catalog<small>10 concepts</small></a>
+    <nav class="nav" aria-label="Sections"><a class="keep" href="#concepts">Concepts</a><a href="#compare">Compare</a><a href="#about">About</a></nav>
+    <button class="tbtn" id="themeBtn" type="button" aria-label="Toggle light and dark appearance" title="Light / dark"><svg id="themeIc" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg></button>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow"><i></i>Redesign concepts · NOAA Science On a Sphere</span>
+        <h1>Ten ways to explore <em>528 datasets</em> on a live globe.</h1>
+        <p class="lead">Every concept is a fully working prototype of the dataset catalog: search, filter, categorise, sort and view — on a real-time 2D ⇄ 3D globe. Each one has its own design language, three themes and three layouts.</p>
+        <div class="ctas"><a class="btn pri" href="concepts/01-orbit.html">Start with Orbit →</a><a class="btn" href="#concepts">Browse all ten</a></div>
+      </div>
+      <div class="collage" aria-hidden="true">
+        <a href="concepts/09-index.html" tabindex="-1" aria-hidden="true"><img src="assets/shots/09-index.jpg" alt="" width="800" height="500"></a>
+        <a href="concepts/01-orbit.html" tabindex="-1" aria-hidden="true"><img src="assets/shots/01-orbit.jpg" alt="" width="800" height="500"></a>
+        <a href="concepts/10-studio.html" tabindex="-1" aria-hidden="true"><img src="assets/shots/10-studio.jpg" alt="" width="800" height="500"></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="facts"><div class="wrap"><ul>
+    <li><b>528</b><span>real catalog datasets, with descriptions &amp; thumbnails</span></li>
+    <li><b>10</b><span>distinct UI / UX concepts</span></li>
+    <li><b>30</b><span>themes — three per concept</span></li>
+    <li><b>30</b><span>layouts — three per concept</span></li>
+    <li><b>2D⇄3D</b><span>custom WebGL2 globe &amp; map in every one</span></li>
+  </ul></div></div>
+
+  <section id="concepts" aria-labelledby="cT"><div class="wrap">
+    <div class="sh"><div><h2 id="cT">The concepts</h2><p>Open a concept, or jump straight into a particular theme or layout using the chips on each card.</p></div><div class="tip">Press <kbd>1</kbd>–<kbd>9</kbd> / <kbd>0</kbd> to open one</div></div>
+    <div class="grid" id="grid"></div>
+    <noscript><ul><li><a href="concepts/01-orbit.html">01 Orbit</a></li><li><a href="concepts/02-atlas.html">02 Atlas</a></li><li><a href="concepts/03-mission-control.html">03 Mission Control</a></li><li><a href="concepts/04-gallery.html">04 Gallery</a></li><li><a href="concepts/05-constellation.html">05 Constellation</a></li><li><a href="concepts/06-chronos.html">06 Chronos</a></li><li><a href="concepts/07-pocket.html">07 Pocket</a></li><li><a href="concepts/08-portal.html">08 Portal</a></li><li><a href="concepts/09-index.html">09 Index</a></li><li><a href="concepts/10-studio.html">10 Studio</a></li></ul></noscript>
+  </div></section>
+
+  <section id="compare" aria-labelledby="mT"><div class="wrap">
+    <div class="sh"><div><h2 id="mT">Which one fits?</h2><p>A rule-of-thumb view of where each concept is strongest. They all cover search, filters, sorting, categories and a 2D/3D viewer — this is about emphasis.</p></div></div>
+    <div class="tw"><table><thead><tr><th scope="col">Concept</th><th scope="col">Find fast</th><th scope="col">Discover</th><th scope="col">Map in context</th><th scope="col">Time</th><th scope="col">Present &amp; teach</th><th scope="col">Mobile</th></tr></thead><tbody id="tbody"></tbody></table></div>
+    <p class="legend">Three dots = the concept’s sweet spot.</p>
+  </div></section>
+
+  <section id="about" aria-labelledby="aT"><div class="wrap">
+    <div class="sh"><div><h2 id="aT">Good to know</h2></div></div>
+    <div class="notes">
+      <div class="note"><h3>Real catalog, illustrative layers</h3><p>The 528 dataset names, categories, themes, keywords, descriptions, coverage dates and thumbnails are taken from the public Science On a Sphere catalog. The map layers drawn on the globe are procedural illustrations generated in your browser — not the actual data.</p></div>
+      <div class="note"><h3>One engine, ten interfaces</h3><p>A dependency-free WebGL2 engine morphs a sphere into a flat map (equirectangular, Natural Earth or Mercator), renders day/night, atmosphere and 20+ data looks, and also draws moons and planets. Every concept shares it, plus the catalog store and a playlist that follows you from concept to concept.</p></div>
+      <div class="note"><h3>Open, accessible, responsive</h3><ul><li>Keyboard first: <kbd>/</kbd> focuses search, <kbd>Esc</kbd> closes things.</li><li>Honours reduced-motion and dark/light preferences.</li><li>Tested from phone to wide desktop.</li><li>Text contrast measured against WCAG AA (4.5:1) in all 30 themes — apart from text laid directly over imagery or the globe.</li><li>Thumbnails and web fonts load from the internet; everything else is inside each single HTML file.</li></ul></div>
+    </div>
+  </div></section>
+</main>
+
+<footer><div class="wrap">SOS Catalog redesign concepts — design prototypes, not an official NOAA product. Dataset names, descriptions and images belong to their respective owners at sos.noaa.gov.</div></footer>
+
+<script>
+(function () {
+  'use strict';
+  const C = [
+    { n: '01', f: 'concepts/01-orbit.html', t: 'Orbit', tag: 'Globe-first', p: 'A cockpit made of glass: panels float over a live Earth, so you can browse, filter and inspect without ever leaving the planet.',
+      L: [['left', 'Panel left'], ['right', 'Panel right'], ['bottom', 'Bottom dock']], T: [['deep', 'Deep space', '#0b1730', '#58aaff'], ['aurora', 'Aurora', '#0c0720', '#7ff0cd'], ['frost', 'Frost', '#e6eef8', '#0b5ed7']], s: [2, 2, 3, 1, 1, 2] },
+    { n: '02', f: 'concepts/02-atlas.html', t: 'Atlas', tag: 'Editorial', p: 'Datasets read like plates in a printed atlas — serif type, paper and ink, figure captions — with the map as the hero of every spread.',
+      L: [['split', 'Split'], ['hero', 'Hero plate'], ['flip', 'Flip']], T: [['paper', 'Paper', '#f6f0e1', '#cf3f27'], ['ink', 'Ink', '#0f1115', '#f0b441'], ['ocean', 'Ocean', '#c4dbe9', '#0a7f8c']], s: [3, 2, 2, 1, 2, 2] },
+    { n: '03', f: 'concepts/03-mission-control.html', t: 'Mission Control', tag: 'Power user', p: 'A dense, keyboard-driven console: query syntax, sortable tables, live facet counters and a viewport — for people who live in the catalog.',
+      L: [['console', 'Console'], ['side', 'Side rail'], ['table', 'Table']], T: [['phosphor', 'Phosphor', '#020504', '#36ff9c'], ['amber', 'Amber', '#070401', '#ffb21a'], ['blueprint', 'Blueprint', '#0a2250', '#9fd8ff']], s: [3, 1, 2, 1, 0, 1] },
+    { n: '04', f: 'concepts/04-gallery.html', t: 'Gallery', tag: 'Streaming-style', p: 'A front door that feels like a streaming service: an auto-playing hero reel, topic tiles and shelves make discovery effortless.',
+      L: [['shelves', 'Shelves'], ['grid', 'Grid'], ['mosaic', 'Mosaic']], T: [['daylight', 'Daylight', '#f4f2ff', '#7b5cff'], ['midnight', 'Midnight', '#0a0a1f', '#6a8cff'], ['candy', 'Candy', '#fff0f7', '#ff7ab8']], s: [2, 3, 2, 1, 2, 3] },
+    { n: '05', f: 'concepts/05-constellation.html', t: 'Constellation', tag: 'Visual graph', p: 'Every dataset is a star. Cluster them by category, theme, year or layer; hover to reveal connections, click to fly into the globe.',
+      L: [['float', 'Floating'], ['dock', 'Docked'], ['focus', 'Focus']], T: [['indigo', 'Indigo', '#0a0f2c', '#8f9bff'], ['nebula', 'Nebula', '#0b0412', '#ff7ac3'], ['chalk', 'Chalk', '#f7f2e4', '#3a4cff']], s: [1, 3, 1, 1, 1, 1] },
+    { n: '06', f: 'concepts/06-chronos.html', t: 'Chronos', tag: 'Time-first', p: 'A zoomable Gantt of the period each dataset covers — from 500 CE to 2100. Drag the window, scrub the cursor and watch the globe change.',
+      L: [['stack', 'Stacked'], ['side', 'Side viewer'], ['focus', 'Timeline only']], T: [['sand', 'Sand', '#efe9dc', '#c8431b'], ['graphite', 'Graphite', '#161514', '#f4a43a'], ['sea', 'Sea glass', '#e5eff1', '#0a7f82']], s: [2, 2, 2, 3, 1, 2] },
+    { n: '07', f: 'concepts/07-pocket.html', t: 'Pocket', tag: 'Mobile-first', p: 'Built for thumbs: a draggable bottom sheet, a swipeable card deck or a full-screen stories feed — all over a full-bleed globe.',
+      L: [['sheet', 'Bottom sheet'], ['cards', 'Card deck'], ['reels', 'Stories']], T: [['daylight', 'Daylight', '#e8effa', '#2563eb'], ['midnight', 'Midnight', '#070b17', '#8aa6ff'], ['coral', 'Coral', '#ffefe6', '#ee4b27']], s: [2, 3, 3, 1, 1, 3] },
+    { n: '08', f: 'concepts/08-portal.html', t: 'Portal', tag: 'Classic, accessible', p: 'The trustworthy catalog: faceted filters, autocomplete, quick look and a full dataset page — plus a genuinely high-contrast theme.',
+      L: [['grid', 'Grid'], ['list', 'List'], ['split', 'Live preview']], T: [['noaa', 'Ocean blue', '#eef3f9', '#0a58b5'], ['deep', 'Deep sea', '#07101e', '#5aa9ff'], ['contrast', 'High contrast', '#000000', '#ffd400']], s: [3, 2, 2, 1, 1, 2] },
+    { n: '09', f: 'concepts/09-index.html', t: 'Index', tag: 'Typographic', p: 'A Swiss-style index: filter with a sentence, point at an entry to preview it on a live globe, open dictionary-style entries.',
+      L: [['list', 'List'], ['columns', 'Columns'], ['wall', 'Type wall']], T: [['paper', 'Paper', '#f3f1ec', '#d90028'], ['ink', 'Ink', '#0b0b0b', '#c6ff1a'], ['klein', 'Klein blue', '#0a2fb8', '#ffe14a']], s: [3, 2, 1, 1, 1, 2] },
+    { n: '10', f: 'concepts/10-studio.html', t: 'Studio', tag: 'Curate & present', p: 'Build a tour like a video edit, compare up to four globes side by side with linked cameras, then present it full screen.',
+      L: [['studio', 'Studio'], ['compare', 'Compare'], ['present', 'Present']], T: [['cinema', 'Cinema', '#0a0a0d', '#ff4a4a'], ['light', 'Studio light', '#e9ecf1', '#1766ff'], ['neon', 'Neon', '#08051a', '#c35cff']], s: [2, 1, 3, 1, 3, 1] },
+  ];
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const arrow = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+  document.getElementById('grid').innerHTML = C.map((c, i) => `<article class="card" aria-labelledby="t${c.n}">
+    <a class="shot" href="${c.f}" tabindex="-1" aria-hidden="true"><img src="assets/shots/${c.f.split('/')[1].replace('.html', '.jpg')}" alt="" width="800" height="500" loading="${i < 4 ? 'eager' : 'lazy'}" decoding="async"><span class="num">${c.n}</span><span class="open">Open ${arrow}</span></a>
+    <div class="cb"><h3 id="t${c.n}"><a href="${c.f}" aria-describedby="d${c.n}">${esc(c.t)}</a><small>${esc(c.tag)}</small></h3><p id="d${c.n}">${esc(c.p)}</p>
+      <div class="rows" role="group" aria-label="${esc(c.t)} — jump to a theme or layout"><div class="row"><span class="k">Layouts</span>${c.L.map(([id, l]) => `<a class="chip l" href="${c.f}?layout=${id}">${esc(l)}</a>`).join('')}</div>
+      <div class="row"><span class="k">Themes</span>${c.T.map(([id, l, a, b]) => `<a class="chip" href="${c.f}?theme=${id}"><span class="sw" style="background:linear-gradient(135deg,${a} 0 50%,${b} 50% 100%)"></span>${esc(l)}</a>`).join('')}</div></div></div></article>`).join('');
+  const labels = ['Find fast', 'Discover', 'Map in context', 'Time', 'Present & teach', 'Mobile'];
+  document.getElementById('tbody').innerHTML = C.map((c) => `<tr><th scope="row"><span>${c.n}</span><a href="${c.f}">${esc(c.t)}</a></th>${c.s.map((v, k) => `<td><span class="dots" role="img" aria-label="${labels[k]}: ${v} of 3">${[1, 2, 3].map((d) => `<i class="${d <= v ? 'on' : ''}"></i>`).join('')}</span></td>`).join('')}</tr>`).join('');
+
+  // theme toggle (auto → opposite of the system, remembered)
+  const root = document.documentElement, btn = document.getElementById('themeBtn');
+  try { const s = localStorage.getItem('sos.gallery.theme'); if (s) root.setAttribute('data-theme', s); } catch (e) { /* ignore */ }
+  btn.addEventListener('click', () => { const dark = root.getAttribute('data-theme') ? root.getAttribute('data-theme') === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; const n = dark ? 'light' : 'dark'; root.setAttribute('data-theme', n); try { localStorage.setItem('sos.gallery.theme', n); } catch (e) { /* ignore */ } });
+  // number keys open concepts
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea|select/i.test(e.target.tagName)) return;
+    const k = e.key === '0' ? 9 : /^[1-9]$/.test(e.key) ? +e.key - 1 : -1; if (k >= 0 && C[k]) location.href = C[k].f;
+  });
+})();
+</script>
+</body>
+</html>

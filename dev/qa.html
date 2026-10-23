@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>QA matrix</title>
+<style>
+body{font:13px/1.4 ui-monospace,Consolas,monospace;margin:16px;background:#111;color:#ddd}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #333;padding:4px 8px;text-align:left;vertical-align:top}
+.ok{color:#7dffa6}.bad{color:#ff7b7b}.warn{color:#ffd27a}
+#stage{position:fixed;left:-9999px;top:0}
+button{font:inherit;padding:6px 14px}
+</style></head><body>
+<h3>QA matrix <button id="go">Run</button> <span id="prog"></span></h3>
+<div id="stage"></div>
+<table><thead><tr><th>#</th><th>URL</th><th>viewport</th><th>result</th><th>details</th></tr></thead><tbody id="out"></tbody></table>
+<script>
+const CONCEPTS = {
+  '01-orbit': { themes: ['deep', 'aurora', 'frost'], layouts: ['left', 'right', 'bottom'] },
+  '02-atlas': { themes: ['paper', 'ink', 'ocean'], layouts: ['split', 'hero', 'flip'] },
+  '03-mission-control': { themes: ['phosphor', 'amber', 'blueprint'], layouts: ['console', 'side', 'table'] },
+  '04-gallery': { themes: ['daylight', 'midnight', 'candy'], layouts: ['shelves', 'grid', 'mosaic'] },
+  '05-constellation': { themes: ['indigo', 'nebula', 'chalk'], layouts: ['float', 'dock', 'focus'] },
+  '06-chronos': { themes: ['sand', 'graphite', 'sea'], layouts: ['stack', 'side', 'focus'] },
+  '07-pocket': { themes: ['daylight', 'midnight', 'coral'], layouts: ['sheet', 'cards', 'reels'] },
+  '08-portal': { themes: ['noaa', 'deep', 'contrast'], layouts: ['grid', 'list', 'split'] },
+  '09-index': { themes: ['paper', 'ink', 'klein'], layouts: ['list', 'columns', 'wall'] },
+  '10-studio': { themes: ['cinema', 'light', 'neon'], layouts: ['studio', 'compare', 'present'] },
+};
+const params = new URLSearchParams(location.search);
+const only = params.get('only') ? params.get('only').split(',') : null;
+const mode = params.get('mode') || 'all';   // all | desktop | mobile
+const HASH = params.get('hash') ? '#' + params.get('hash') : '';   // e.g. hash=hurricane-season-2017 → loads with a dataset selected
+const jobs = [];
+for (const [name, c] of Object.entries(CONCEPTS)) {
+  if (only && !only.some((o) => name.startsWith(o))) continue;
+  const base = `../concepts/${name}.html`;
+  if (mode !== 'mobile') {
+    c.themes.forEach((t) => jobs.push({ url: `${base}?rafshim&theme=${t}${HASH}`, vp: [1360, 800], tag: `theme ${t}` }));
+    c.layouts.forEach((l) => jobs.push({ url: `${base}?rafshim&layout=${l}${HASH}`, vp: [1360, 800], tag: `layout ${l}` }));
+  }
+  if (mode !== 'desktop') c.layouts.forEach((l) => jobs.push({ url: `${base}?rafshim&layout=${l}${HASH}`, vp: [390, 780], tag: `layout ${l}` }));
+}
+const out = document.getElementById('out'), prog = document.getElementById('prog'), stage = document.getElementById('stage');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function run(job, i) {
+  const f = document.createElement('iframe'); f.style.cssText = `width:${job.vp[0]}px;height:${job.vp[1]}px;border:0`; stage.appendChild(f);
+  const t0 = performance.now(); let loaded = false; f.onload = () => { loaded = true; }; f.src = job.url;
+  while (!loaded && performance.now() - t0 < 12000) await sleep(100);
+  await sleep(1700);
+  const row = document.createElement('tr'); let res = 'ok', det = [];
+  try {
+    const w = f.contentWindow, d = w.document, errs = (w.__sosErrors || []).slice();
+    const ow = d.scrollingElement.scrollWidth - d.scrollingElement.clientWidth;
+    const canv = d.querySelectorAll('canvas').length;
+    if (errs.length) { res = 'ERR'; det.push(...errs.slice(0, 3)); }
+    if (ow > 2) { if (res === 'ok') res = 'warn'; det.push('horizontal overflow ' + ow + 'px'); }
+    if (!canv) { res = 'ERR'; det.push('no canvas'); }
+    if (!w.SOS || !w.SOS.store) { res = 'ERR'; det.push('no SOS'); }
+    det.push(`${Math.round(performance.now() - t0)}ms`);
+  } catch (e) { res = 'ERR'; det.push('exception ' + e.message); }
+  row.innerHTML = `<td>${i + 1}</td><td>${job.url.replace('../concepts/', '').replace('?rafshim&', '?')}</td><td>${job.vp.join('×')}</td><td class="${res === 'ok' ? 'ok' : res === 'warn' ? 'warn' : 'bad'}">${res}</td><td>${det.join(' · ')}</td>`;
+  out.appendChild(row); f.src = 'about:blank'; await sleep(120); f.remove();
+  window.__qa = window.__qa || []; window.__qa.push({ url: job.url, vp: job.vp.join('x'), res, det: det.join(' | ') });
+}
+document.getElementById('go').onclick = async () => { document.getElementById('go').disabled = true; for (let i = 0; i < jobs.length; i++) { prog.textContent = `${i + 1}/${jobs.length}`; await run(jobs[i], i); } prog.textContent = `done (${jobs.length})`; window.__qaDone = true; };
+if (params.get('auto')) document.getElementById('go').click();
+</script></body></html>

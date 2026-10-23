@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>A11y structure audit</title>
+<style>
+  body{font:13px/1.4 ui-monospace,Consolas,monospace;margin:16px;background:#111;color:#ddd}
+  table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #333;padding:3px 8px;text-align:left;vertical-align:top}
+  .ok{color:#7dffa6}.bad{color:#ff7b7b}
+  #stage{position:fixed;left:-9999px;top:0}
+  button{font:inherit;padding:6px 14px}
+</style></head><body>
+<h3>Structure audit <button id="go">Run</button> <span id="prog"></span></h3>
+<p>Per page, plain and with a dataset open: unnamed buttons/links, images without alt, unlabeled form controls, duplicate ids, positive tabindex, missing lang / title / viewport. Results: <code>window.__a11y</code>.</p>
+<div id="stage"></div>
+<table><thead><tr><th>#</th><th>page</th><th>state</th><th>issues</th><th>details</th></tr></thead><tbody id="out"></tbody></table>
+<script>
+const PAGES = ['01-orbit', '02-atlas', '03-mission-control', '04-gallery', '05-constellation', '06-chronos', '07-pocket', '08-portal', '09-index', '10-studio'];
+const params = new URLSearchParams(location.search);
+const W = +params.get('w') || 1280, H = +params.get('h') || 800;
+const states = (params.get('states') || 'plain,open').split(',');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const visible = (win, e) => { for (let n = e; n && n.nodeType === 1; n = n.parentElement) { const c = win.getComputedStyle(n); if (c.display === 'none' || c.visibility === 'hidden') return false; } const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+const desc = (e) => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
+
+function audit(win) {
+  const d = win.document, issues = [];
+  const name = (e) => {
+    if (e.getAttribute('aria-label') && e.getAttribute('aria-label').trim()) return true;
+    const lb = e.getAttribute('aria-labelledby'); if (lb && lb.split(/\s+/).some((id) => { const t = d.getElementById(id); return t && t.textContent.trim(); })) return true;
+    if ((e.getAttribute('title') || '').trim()) return true;
+    if ((e.textContent || '').replace(/\s+/g, '').length) return true;
+    if (e.querySelector('img[alt]:not([alt=""]), svg title, [role="img"][aria-label]')) return true;
+    if (e.labels && e.labels.length && [...e.labels].some((l) => l.textContent.trim())) return true;
+    return false;
+  };
+  if (!d.documentElement.lang) issues.push('html has no lang');
+  if (!d.title.trim()) issues.push('no <title>');
+  if (!d.querySelector('meta[name="viewport"]')) issues.push('no viewport meta');
+  d.querySelectorAll('button, a[href], [role="button"], [role="tab"], [role="menuitem"], summary').forEach((e) => { if (visible(win, e) && !name(e)) issues.push('unnamed ' + desc(e)); });
+  d.querySelectorAll('input:not([type=hidden]), select, textarea').forEach((e) => {
+    if (!visible(win, e)) return;
+    if (e.type === 'checkbox' || e.type === 'radio' || e.type === 'range') { if (!name(e)) issues.push('unlabeled ' + e.type + ' ' + desc(e)); return; }
+    if (!name(e) && !(e.getAttribute('placeholder') || '').trim()) issues.push('unlabeled ' + desc(e));
+  });
+  d.querySelectorAll('img').forEach((e) => { if (visible(win, e) && !e.hasAttribute('alt')) issues.push('img without alt ' + desc(e)); });
+  const ids = {}; d.querySelectorAll('[id]').forEach((e) => { ids[e.id] = (ids[e.id] || 0) + 1; });
+  Object.entries(ids).forEach(([k, n]) => { if (n > 1) issues.push(`duplicate id "${k}" ×${n}`); });
+  d.querySelectorAll('[tabindex]').forEach((e) => { if (+e.getAttribute('tabindex') > 0) issues.push('positive tabindex ' + desc(e)); });
+  d.querySelectorAll('[aria-labelledby],[aria-controls],[aria-describedby]').forEach((e) => {
+    ['aria-labelledby', 'aria-controls', 'aria-describedby'].forEach((a) => { (e.getAttribute(a) || '').split(/\s+/).filter(Boolean).forEach((id) => { if (!d.getElementById(id)) issues.push(`${a} → missing #${id} on ${desc(e)}`); }); });
+  });
+  if (!d.querySelector('h1')) issues.push('no <h1>');
+  return issues;
+}
+
+const results = (window.__a11y = []);
+const jobs = []; PAGES.forEach((p) => states.forEach((s) => jobs.push({ p, s })));
+async function run(job, i) {
+  const f = document.createElement('iframe'); f.style.cssText = `width:${W}px;height:${H}px;border:0`; document.getElementById('stage').appendChild(f);
+  f.src = `../concepts/${job.p}.html?rafshim&_=${Date.now()}` + (job.s === 'open' ? '#hurricane-season-2017' : '');
+  const t0 = performance.now(); let loaded = false; f.onload = () => { loaded = true; };
+  while (!loaded && performance.now() - t0 < 12000) await sleep(100);
+  await sleep(2200);
+  let issues; try { issues = audit(f.contentWindow); } catch (e) { issues = ['audit error: ' + e.message]; }
+  const uniq = [...new Set(issues)];
+  results.push({ page: job.p, state: job.s, issues: uniq });
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${i + 1}</td><td>${job.p}</td><td>${job.s}</td><td class="${uniq.length ? 'bad' : 'ok'}">${uniq.length}</td><td>${uniq.slice(0, 6).join(' · ')}</td>`;
+  document.getElementById('out').appendChild(tr);
+  f.src = 'about:blank'; await sleep(100); f.remove();
+}
+document.getElementById('go').onclick = async () => { document.getElementById('go').disabled = true; for (let i = 0; i < jobs.length; i++) { document.getElementById('prog').textContent = `${i + 1}/${jobs.length}`; await run(jobs[i], i); } document.getElementById('prog').textContent = `done (${jobs.length})`; window.__a11yDone = true; };
+if (params.get('auto')) document.getElementById('go').click();
+</script></body></html>

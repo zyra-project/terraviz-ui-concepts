@@ -1,0 +1,30 @@
+/* SOS concepts — shared base (kept intentionally small; every concept restyles on top of it) */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+input{text-overflow:ellipsis}
+::placeholder{color:var(--faint,#6b6b6b);opacity:1}   /* concepts may restyle; the default is their own tertiary-text token instead of the UA grey */
+/* soft fade on the edge(s) of a horizontally scrolling strip that still has content (set by SOS.ui.bindScrollFade) */
+[data-fade]{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 var(--fade-l,0px),#000 calc(100% - var(--fade-r,0px)),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 var(--fade-l,0px),#000 calc(100% - var(--fade-r,0px)),transparent 100%)}
+button{cursor:pointer;background:none;border:0;padding:0}
+button:disabled{cursor:not-allowed}
+a{color:inherit}
+img{max-width:100%}
+h1,h2,h3,h4,p,ul,ol,figure,dl,dd{margin:0}
+ul,ol{padding:0;list-style:none}
+.ic{flex:none;display:inline-block;vertical-align:middle}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+[hidden]{display:none!important}
+mark{background:var(--mark-bg,rgba(255,200,60,.35));color:inherit;border-radius:3px;padding:0 1px}
+.thumb{position:relative;display:block;overflow:hidden;background-size:cover;isolation:isolate}
+.thumb>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease}
+.thumb>img.is-in{opacity:1}
+.sosglobe{position:relative;overflow:hidden}
+.sosglobe.is-dragging{cursor:grabbing}
+.sosglobe:not(.is-dragging){cursor:grab}
+.sosglobe:focus-visible{outline:2px solid var(--focus,#6aa7ff);outline-offset:-2px}
+.sos-toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,16px);opacity:0;pointer-events:none;z-index:9999;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:500;background:var(--toast-bg,#111);color:var(--toast-fg,#fff);box-shadow:0 10px 30px rgba(0,0,0,.35);transition:opacity .2s ease,transform .25s cubic-bezier(.2,.8,.2,1)}
+.sos-toast.is-on{opacity:1;transform:translate(-50%,0)}
+@keyframes sos-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}

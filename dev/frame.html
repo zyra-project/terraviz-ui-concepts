@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Frame</title>
+<style>
+  /* Dev helper: shows a concept inside an iframe of the requested CSS size, scaled to fit this window — so a small
+     preview pane can still screenshot a true 1280x800 layout.   frame.html?c=01-orbit&w=1280&h=800&q=layout=left&theme=deep#slug */
+  html,body{margin:0;height:100%;background:#1b1b1b;overflow:hidden}
+  iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;background:#fff}
+</style></head><body>
+<iframe id="f" title="concept"></iframe>
+<script>
+  const p = new URLSearchParams(location.search);
+  const w = +p.get('w') || 1280, h = +p.get('h') || 800;
+  const raw = location.search.split('&q=')[1] || '';
+  const f = document.getElementById('f');
+  f.style.width = w + 'px'; f.style.height = h + 'px';
+  // scale so the whole iframe fills this window (override with &s=0.5)
+  const fit = () => { const s = +p.get('s') || Math.min(innerWidth / w, innerHeight / h); f.style.transform = 'scale(' + s + ')'; };
+  fit(); addEventListener('resize', fit);
+  f.src = '../concepts/' + (p.get('c') || '01-orbit') + '.html?rafshim&_=' + Date.now() + (raw ? '&' + raw : '') + location.hash;   // cache-buster: always show the latest build
+</script>
+</body></html>
